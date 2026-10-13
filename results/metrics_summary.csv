@@ -1,0 +1,6 @@
+model,epochs,split,map50,map50_95,precision,recall,notes
+yolov8n,50,val,0.606,0.360,0.781,0.559,first baseline
+yolov8n,100 (early stop ~67),val,0.617,0.377,0.753,0.568,selected model
+yolov8n,100 (early stop ~67),test,0.512,0.247,0.569,0.453,selected model; test run once
+yolov8s,100,val,0.587,0.368,0.531,0.599,comparison model
+yolov8s,100,test,0.498,0.239,0.526,0.522,supplementary; run after model selection in a different Colab session

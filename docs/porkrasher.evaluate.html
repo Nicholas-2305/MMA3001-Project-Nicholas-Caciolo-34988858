@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module porkrasher.evaluate</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title"><a href="porkrasher.html" class="white">porkrasher</a>.evaluate</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/home/claude/pork-rasher-defect-detection/src/porkrasher/evaluate.py">/home/claude/pork-rasher-defect-detection/src/porkrasher/evaluate.py</a></td></tr></table>
+    <p><span class="code">Evaluate&nbsp;trained&nbsp;detectors&nbsp;and&nbsp;summarise&nbsp;results.<br>
+&nbsp;<br>
+Typical&nbsp;use::<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;validation&nbsp;split:&nbsp;use&nbsp;freely&nbsp;while&nbsp;comparing&nbsp;models<br>
+&nbsp;&nbsp;&nbsp;&nbsp;python&nbsp;-m&nbsp;porkrasher.evaluate&nbsp;--weights&nbsp;runs/nano_100ep/weights/best.pt&nbsp;\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--data&nbsp;data/dataset/data_fixed.yaml&nbsp;--split&nbsp;val&nbsp;--out&nbsp;results/nano_val.json<br>
+&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;test&nbsp;split:&nbsp;run&nbsp;ONCE,&nbsp;on&nbsp;the&nbsp;single&nbsp;model&nbsp;chosen&nbsp;using&nbsp;validation&nbsp;results<br>
+&nbsp;&nbsp;&nbsp;&nbsp;python&nbsp;-m&nbsp;porkrasher.evaluate&nbsp;--weights&nbsp;runs/nano_100ep/weights/best.pt&nbsp;\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--data&nbsp;data/dataset/data_fixed.yaml&nbsp;--split&nbsp;test&nbsp;--out&nbsp;results/nano_test.json<br>
+&nbsp;<br>
+The&nbsp;test&nbsp;split&nbsp;exists&nbsp;to&nbsp;give&nbsp;an&nbsp;estimate&nbsp;that&nbsp;no&nbsp;modelling&nbsp;decision&nbsp;has<br>
+touched.&nbsp;Evaluating&nbsp;several&nbsp;models&nbsp;on&nbsp;it&nbsp;and&nbsp;then&nbsp;picking&nbsp;the&nbsp;best&nbsp;turns&nbsp;it<br>
+into&nbsp;a&nbsp;second&nbsp;validation&nbsp;set.<br>
+&nbsp;<br>
+Classes&nbsp;with&nbsp;no&nbsp;instances&nbsp;in&nbsp;the&nbsp;evaluated&nbsp;split&nbsp;(``wrinkle``&nbsp;in&nbsp;this&nbsp;dataset)<br>
+cannot&nbsp;be&nbsp;scored&nbsp;and&nbsp;are&nbsp;omitted&nbsp;from&nbsp;per-class&nbsp;results,&nbsp;not&nbsp;reported&nbsp;as&nbsp;0.<br>
+&nbsp;<br>
+``ultralytics``&nbsp;is&nbsp;imported&nbsp;only&nbsp;when&nbsp;a&nbsp;model&nbsp;is&nbsp;actually&nbsp;evaluated.</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="argparse.html">argparse</a><br>
+</td><td class="multicolumn"><a href="json.html">json</a><br>
+</td><td class="multicolumn"><a href="logging.html">logging</a><br>
+</td><td class="multicolumn"><a href="time.html">time</a><br>
+</td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+    
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-benchmark_inference"><strong>benchmark_inference</strong></a>(
+    weights: 'PathLike',
+    image_paths: 'Sequence[PathLike]',
+    imgsz: 'int' = 640,
+    conf: 'float' = 0.25,
+    n_warmup: 'int' = 10
+) -&gt; 'Dict[str, float]'</dt><dd><span class="code">Time&nbsp;end-to-end&nbsp;inference&nbsp;(load,&nbsp;resize,&nbsp;forward&nbsp;pass,&nbsp;NMS)&nbsp;per&nbsp;image.<br>
+&nbsp;<br>
+Warm-up&nbsp;predictions&nbsp;are&nbsp;run&nbsp;first&nbsp;and&nbsp;excluded,&nbsp;so&nbsp;one-off&nbsp;GPU&nbsp;start-up<br>
+cost&nbsp;is&nbsp;not&nbsp;counted.&nbsp;Compare&nbsp;models&nbsp;only&nbsp;when&nbsp;benchmarked&nbsp;in&nbsp;the&nbsp;*same*<br>
+session&nbsp;on&nbsp;the&nbsp;*same*&nbsp;images:&nbsp;timings&nbsp;vary&nbsp;between&nbsp;Colab&nbsp;sessions.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;weights:&nbsp;Path&nbsp;to&nbsp;trained&nbsp;weights.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;image_paths:&nbsp;Images&nbsp;to&nbsp;time&nbsp;(one&nbsp;prediction&nbsp;each).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;imgsz:&nbsp;Square&nbsp;input&nbsp;resolution.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;conf:&nbsp;Confidence&nbsp;threshold.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n_warmup:&nbsp;Number&nbsp;of&nbsp;untimed&nbsp;warm-up&nbsp;predictions.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;``{"ms_per_image":&nbsp;float,&nbsp;"n_images":&nbsp;int}``.<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;``image_paths``&nbsp;is&nbsp;empty&nbsp;or&nbsp;``n_warmup``&nbsp;is&nbsp;negative.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;FileNotFoundError:&nbsp;If&nbsp;``weights``&nbsp;does&nbsp;not&nbsp;exist.</span></dd></dl>
+ <dl><dt><a name="-evaluate"><strong>evaluate</strong></a>(
+    weights: 'PathLike',
+    data_yaml: 'PathLike',
+    split: 'str' = 'val',
+    imgsz: 'int' = 640,
+    out_json: 'Optional[PathLike]' = None
+) -&gt; 'Dict[str, Any]'</dt><dd><span class="code">Evaluate&nbsp;trained&nbsp;weights&nbsp;on&nbsp;the&nbsp;validation&nbsp;or&nbsp;test&nbsp;split.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;weights:&nbsp;Path&nbsp;to&nbsp;a&nbsp;trained&nbsp;``best.pt``.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_yaml:&nbsp;Ultralytics&nbsp;data&nbsp;config.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;split:&nbsp;``"val"``&nbsp;or&nbsp;``"test"``.&nbsp;Use&nbsp;``"test"``&nbsp;once,&nbsp;on&nbsp;the&nbsp;final&nbsp;model.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;imgsz:&nbsp;Square&nbsp;input&nbsp;resolution;&nbsp;should&nbsp;match&nbsp;training.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;out_json:&nbsp;If&nbsp;given,&nbsp;write&nbsp;the&nbsp;result&nbsp;dictionary&nbsp;to&nbsp;this&nbsp;JSON&nbsp;file.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The&nbsp;dictionary&nbsp;from&nbsp;:func:`metrics_to_dict`,&nbsp;plus&nbsp;``"split"``,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;``"weights"``&nbsp;and&nbsp;``"data"``&nbsp;keys.<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;``split``&nbsp;is&nbsp;not&nbsp;``"val"``&nbsp;or&nbsp;``"test"``.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;FileNotFoundError:&nbsp;If&nbsp;``weights``&nbsp;or&nbsp;``data_yaml``&nbsp;does&nbsp;not&nbsp;exist.</span></dd></dl>
+ <dl><dt><a name="-format_per_class_table"><strong>format_per_class_table</strong></a>(
+    results: 'Mapping[str, Mapping[str, Any]]',
+    metric: 'str' = 'map50'
+) -&gt; 'str'</dt><dd><span class="code">Render&nbsp;one&nbsp;per-class&nbsp;metric&nbsp;for&nbsp;several&nbsp;models&nbsp;as&nbsp;a&nbsp;Markdown&nbsp;table.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;results:&nbsp;``{model_label:&nbsp;metrics_dict}``.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;metric:&nbsp;One&nbsp;of&nbsp;``"map50"``,&nbsp;``"map50_95"``,&nbsp;``"precision"``,&nbsp;``"recall"``.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Markdown&nbsp;table&nbsp;with&nbsp;one&nbsp;row&nbsp;per&nbsp;class&nbsp;(union&nbsp;across&nbsp;models,&nbsp;sorted&nbsp;by<br>
+&nbsp;&nbsp;&nbsp;&nbsp;name).&nbsp;A&nbsp;class&nbsp;missing&nbsp;from&nbsp;a&nbsp;model's&nbsp;results&nbsp;shows&nbsp;an&nbsp;em&nbsp;dash.<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;``metric``&nbsp;is&nbsp;not&nbsp;a&nbsp;recognised&nbsp;key.</span></dd></dl>
+ <dl><dt><a name="-format_results_table"><strong>format_results_table</strong></a>(results: 'Mapping[str, Mapping[str, Any]]') -&gt; 'str'</dt><dd><span class="code">Render&nbsp;overall&nbsp;metrics&nbsp;for&nbsp;several&nbsp;models&nbsp;as&nbsp;a&nbsp;Markdown&nbsp;table.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;results:&nbsp;``{model_label:&nbsp;metrics_dict}``&nbsp;where&nbsp;each&nbsp;value&nbsp;comes&nbsp;from<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:func:`metrics_to_dict`&nbsp;(or&nbsp;:func:`evaluate`).<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Markdown&nbsp;table&nbsp;text&nbsp;with&nbsp;one&nbsp;row&nbsp;per&nbsp;model.</span></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>(argv: 'Optional[Sequence[str]]' = None) -&gt; 'None'</dt><dd><span class="code">Command-line&nbsp;entry&nbsp;point;&nbsp;see&nbsp;the&nbsp;module&nbsp;docstring&nbsp;for&nbsp;examples.</span></dd></dl>
+ <dl><dt><a name="-metrics_to_dict"><strong>metrics_to_dict</strong></a>(metrics: 'Any', class_names: 'Optional[Sequence[str]]' = None) -&gt; 'Dict[str, Any]'</dt><dd><span class="code">Convert&nbsp;an&nbsp;Ultralytics&nbsp;detection-metrics&nbsp;object&nbsp;into&nbsp;plain&nbsp;Python&nbsp;data.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;metrics:&nbsp;Object&nbsp;returned&nbsp;by&nbsp;``YOLO.val``&nbsp;(anything&nbsp;exposing&nbsp;``.box``<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;``map50``,&nbsp;``map``,&nbsp;``mp``,&nbsp;``mr``,&nbsp;``ap_class_index``,&nbsp;``p``,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;``r``,&nbsp;``ap50``,&nbsp;``ap``;&nbsp;optionally&nbsp;``.names``&nbsp;and&nbsp;``.speed``).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;class_names:&nbsp;Fallback&nbsp;class&nbsp;names&nbsp;(by&nbsp;id)&nbsp;if&nbsp;``metrics.names``&nbsp;is&nbsp;absent.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;``{"overall":&nbsp;{...},&nbsp;"per_class":&nbsp;{name:&nbsp;{...}},&nbsp;"speed_ms":&nbsp;{...}}``<br>
+&nbsp;&nbsp;&nbsp;&nbsp;where&nbsp;metric&nbsp;keys&nbsp;are&nbsp;``map50``,&nbsp;``map50_95``,&nbsp;``precision``&nbsp;and<br>
+&nbsp;&nbsp;&nbsp;&nbsp;``recall``.&nbsp;Only&nbsp;classes&nbsp;present&nbsp;in&nbsp;the&nbsp;evaluated&nbsp;split&nbsp;appear&nbsp;in<br>
+&nbsp;&nbsp;&nbsp;&nbsp;``per_class``.</span></dd></dl>
+</td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>Dict</strong> = typing.Dict<br>
+<strong>Iterable</strong> = typing.Iterable<br>
+<strong>Mapping</strong> = typing.Mapping<br>
+<strong>Optional</strong> = typing.Optional<br>
+<strong>PathLike</strong> = typing.Union[str, pathlib._local.Path]<br>
+<strong>Sequence</strong> = typing.Sequence<br>
+<strong>Union</strong> = typing.Union<br>
+<strong>VALID_SPLITS</strong> = ('val', 'test')<br>
+<strong>logger</strong> = &lt;Logger porkrasher.evaluate (WARNING)&gt;</td></tr></table>
+</body></html>

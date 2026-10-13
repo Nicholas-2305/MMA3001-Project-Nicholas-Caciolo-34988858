@@ -1,0 +1,6 @@
+class,yolov8n_val,yolov8n_test,yolov8s_val,yolov8s_test
+unsealed,0.930,0.834,0.929,0.849
+packaging-error,0.429,0.480,0.287,0.436
+loose-meat,0.445,0.703,0.467,0.665
+twisted-meat,0.665,0.0324,0.665,0.0408
+wrinkle,n/a,n/a,n/a,n/a
