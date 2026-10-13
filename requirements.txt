@@ -1,0 +1,12 @@
+# Pinned to the version used for the final evaluation runs (Colab, Python 3.13).
+# Earlier training runs used 8.4.162 and some validation runs 8.4.174; see README.
+ultralytics==8.4.175
+
+matplotlib>=3.7
+pillow>=10.0
+pyyaml>=6.0
+numpy>=1.24
+
+# Development / assessment tooling
+pytest>=8.0
+pdoc>=14.0

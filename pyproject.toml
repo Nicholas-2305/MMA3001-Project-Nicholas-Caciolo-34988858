@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "porkrasher"
+version = "0.1.0"
+description = "YOLOv8 object detection of packaging defects on pork rasher trays (MMA3001 project)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ultralytics==8.4.175",
+    "matplotlib>=3.7",
+    "pillow>=10.0",
+    "pyyaml>=6.0",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pdoc>=14.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
