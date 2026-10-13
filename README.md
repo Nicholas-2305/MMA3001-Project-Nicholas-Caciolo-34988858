@@ -27,7 +27,7 @@ docs/              generated HTML documentation
 ## Setup
 
 ```bash
-git clone <YOUR-REPO-URL>
+git clone <https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858/tree/main>
 cd pork-rasher-defect-detection
 pip install -e .            # installs ultralytics==8.4.175 and the other dependencies
 pip install pytest pdoc     # development tools
