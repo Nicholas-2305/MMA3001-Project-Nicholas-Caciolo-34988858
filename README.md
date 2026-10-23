@@ -25,15 +25,40 @@ results/           metrics_summary.csv, per_class_ap50.csv
 docs/              generated HTML documentation
 ```
 
-## Setup
+## Quick start: Google Colab (recommended)
+
+The whole workflow runs from one notebook, `notebooks/colab_workflow.ipynb`, with no local installation.
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858/blob/main/notebooks/colab_workflow.ipynb)
+
+1. Open the notebook with the badge above (or in Colab: File, Open notebook, GitHub tab, paste this repository's address, choose `notebooks/colab_workflow.ipynb`).
+2. Choose a GPU: Runtime, Change runtime type, T4 GPU.
+3. **Set the dataset path.** The dataset is not in this repository (see Data below). In the second cell, set `ZIP_PATH` to the Roboflow zip, in one of two ways:
+   - *Google Drive:* put the zip in your Drive, run the `drive.mount` cell, and use the full path, e.g. `/content/drive/MyDrive/<your folder>/Pork Rasher Error-Packaging-.v4i.yolo26.zip`.
+   - *No Drive:* drag the zip into Colab's Files panel (folder icon) and use `/content/Pork Rasher Error-Packaging-.v4i.yolo26.zip`; skip the `drive.mount` cell.
+4. Run the cells from top to bottom:
+
+| Notebook section | What it does |
+|---|---|
+| Setup | clones this repository and installs it (`pip install -e .`) |
+| Extract, stats, sanity plot | unzips the data, prints class counts, split overlap and box sizes, draws labelled sample images |
+| Training | fine-tunes YOLOv8n (selected model) and, optionally, YOLOv8s (comparison); roughly an hour each on a T4 |
+| Validation | metrics on the validation split |
+| Test | metrics on the test split: run once, on the final model only |
+| Benchmark | inference time per image |
+| Tests and documentation | runs `pytest` (saves `results/test_report.txt`) and regenerates the HTML docs |
+
+For a quick check that everything runs, change `epochs=100` to `epochs=1` in the training cell (the numbers will be poor). A full rerun will not reproduce the reported numbers exactly; see Results.
+
+## Local setup (terminal)
 
 Requires Python 3.10 or newer. A GPU is strongly recommended for training (a Tesla T4 on Google Colab was used; Colab ran Python 3.13 and torch 2.11 with Ultralytics 8.4.175). Evaluation and the tests also run on CPU. Ultralytics is licensed AGPL-3.0; it is installed as a dependency and is not redistributed here.
 
 ```bash
-!git clone https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858.git
-%cd MMA3001-Project-Nicholas-Caciolo-34988858
-!pip install -e .            # installs ultralytics==8.4.175 and the other dependencies
-!pip install pytest pdoc     # development tools
+git clone https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858.git
+cd MMA3001-Project-Nicholas-Caciolo-34988858
+pip install -e .            # installs ultralytics==8.4.175 and the other dependencies
+pip install pytest pdoc     # development tools
 ```
 
 ## Data
@@ -56,7 +81,7 @@ The tests build tiny fake datasets themselves, so `python -m pytest` works strai
 
 ## Reproducing the results
 
-The commands below need the dataset. Replace `path/to/dataset` with the folder you unzipped it into.
+These are the terminal equivalent of the notebook. They need the dataset: replace `path/to/dataset` with the folder you unzipped it into.
 
 ```bash
 # 1. inspect the data (class counts, split overlap, box sizes), then write the Ultralytics config
@@ -76,7 +101,6 @@ python -m porkrasher.evaluate --weights runs/yolov8n_100ep/weights/best.pt --dat
 
 The training command prints `Run folder (use this path)`. If a run name was used before, Ultralytics adds a number to the folder name (for example `yolov8n_100ep2`), so use the printed folder in the `--weights` paths of steps 3 and 4.
 
-`notebooks/colab_workflow.ipynb` runs the same steps in Colab. Set `REPO_URL` and `ZIP_PATH` in its first cells.
 
 ## Results
 
