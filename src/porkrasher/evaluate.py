@@ -55,6 +55,7 @@ def metrics_to_dict(
         ``per_class``.
     """
     box = metrics.box
+    # Prefer the names stored with the model; fall back to the caller's list.
     names = getattr(metrics, "names", None)
     if names is None and class_names is not None:
         names = {i: n for i, n in enumerate(class_names)}
@@ -62,6 +63,9 @@ def metrics_to_dict(
         names = {}
 
     per_class: Dict[str, Dict[str, float]] = {}
+    # box.p / box.r / box.ap50 / box.ap are indexed by *position* in
+    # ap_class_index, not by class id: classes with no instances in the split
+    # (e.g. wrinkle here) are absent, so the two indexings differ.
     for position, class_id in enumerate(box.ap_class_index):
         class_id = int(class_id)
         per_class[str(names.get(class_id, class_id))] = {
@@ -71,7 +75,7 @@ def metrics_to_dict(
             "map50_95": float(box.ap[position]),
         }
 
-    speed = getattr(metrics, "speed", None) or {}
+    speed = getattr(metrics, "speed", None) or {}  # may be missing in older versions
     return {
         "overall": {
             "map50": float(box.map50),
@@ -126,6 +130,8 @@ def format_per_class_table(
     if metric not in ("map50", "map50_95", "precision", "recall"):
         raise ValueError(f"unknown metric: {metric!r}")
     labels = list(results)
+    # Take the union of classes so a class one model never saw still gets a row
+    # (shown as an em dash) rather than silently disappearing from the table.
     classes = sorted({c for r in results.values() for c in r["per_class"]})
     lines = [
         "| Class | " + " | ".join(labels) + " |",
@@ -171,6 +177,8 @@ def evaluate(
         raise FileNotFoundError(f"weights not found: {weights}")
     if not data_yaml.is_file():
         raise FileNotFoundError(f"data config not found: {data_yaml}")
+    # The test set is for one final, unbiased estimate. Warn loudly because
+    # repeated looks (then tuning) would leak it into model selection.
     if split == "test":
         logger.warning(
             "Evaluating on the TEST split: run this once, on the model chosen "
@@ -226,9 +234,13 @@ def benchmark_inference(
     from ultralytics import YOLO  # lazy: heavy dependency
 
     model = YOLO(str(weights))
+    # The first predictions include CUDA/cuDNN start-up and memory allocation,
+    # which would inflate the average; run a few untimed ones first.
     for path in images[:n_warmup]:
         model.predict(path, imgsz=imgsz, conf=conf, verbose=False)
 
+    # perf_counter is a monotonic high-resolution clock, unaffected by system
+    # clock changes, so it is the right choice for timing short intervals.
     started = time.perf_counter()
     for path in images:
         model.predict(path, imgsz=imgsz, conf=conf, verbose=False)

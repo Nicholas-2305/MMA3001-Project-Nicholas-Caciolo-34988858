@@ -69,6 +69,8 @@ def train(
             segmentation model.
         FileNotFoundError: If ``data_yaml`` does not exist.
     """
+    # Validate cheap arguments first so a typo fails in milliseconds, not after
+    # the heavy ultralytics import and a model download.
     for label, value in (
         ("epochs", epochs),
         ("imgsz", imgsz),
@@ -77,6 +79,8 @@ def train(
     ):
         if value <= 0:
             raise ValueError(f"{label} must be positive, got {value}")
+    # Segmentation weights train a mask head and raise an obscure error on
+    # box-only labels; catch the mistake here with a clear message instead.
     if str(weights).lower().endswith("-seg.pt"):
         raise ValueError(
             "segmentation weights given, but the dataset only has bounding-box "
@@ -89,7 +93,9 @@ def train(
     from ultralytics import YOLO  # imported lazily: heavy, and not needed to validate args
 
     started = time.perf_counter()
-    model = YOLO(weights)
+    model = YOLO(weights)  # COCO-pretrained: transfer learning, not training from scratch
+    # exist_ok=False makes Ultralytics create a new numbered folder rather than
+    # overwrite an earlier run, so earlier results are never lost.
     model.train(
         data=str(data_yaml),
         epochs=epochs,
@@ -103,11 +109,16 @@ def train(
     )
     elapsed_hours = (time.perf_counter() - started) / 3600
 
+    # Ask the trainer where it actually saved. Guessing project/name is wrong
+    # whenever a name is reused, because Ultralytics then appends a number
+    # (name2, name3, ...) and the guess points at an older run's weights.
     save_dir = Path(model.trainer.save_dir)
     best = save_dir / "weights" / "best.pt"
 
     import ultralytics
 
+    # Record the settings next to the weights so every result can be traced to
+    # the exact configuration and library version that produced it.
     summary = {
         "weights": str(weights),
         "data": str(data_yaml),

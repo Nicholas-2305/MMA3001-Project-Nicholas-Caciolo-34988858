@@ -93,7 +93,7 @@ def parse_label_line(
             neither 4 (box) nor an even number >= 6 (polygon).
     """
     parts = line.split()
-    if not parts:
+    if not parts:  # blank lines are harmless; skip rather than error
         return None
 
     try:
@@ -106,14 +106,19 @@ def parse_label_line(
         raise ValueError(
             f"class id {class_id} out of range [0, {n_classes}) in line: {line!r}"
         )
+    # Labels are normalised to [0, 1]; values outside that range usually mean
+    # pixel units or a corrupt file. A tiny tolerance absorbs float rounding.
     if any(not -_COORD_TOLERANCE <= c <= 1 + _COORD_TOLERANCE for c in coords):
         raise ValueError(f"coordinate outside [0, 1] in label line: {line!r}")
 
     if len(coords) == 4:
+        # YOLO box format is (x_centre, y_centre, width, height); convert to four
+        # corners so boxes and polygons share one representation downstream.
         xc, yc, width, height = coords
         x1, y1 = xc - width / 2, yc - height / 2
         x2, y2 = xc + width / 2, yc + height / 2
         return class_id, [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
+    # A polygon needs at least 3 vertices (6 numbers) as x, y pairs.
     if len(coords) >= 6 and len(coords) % 2 == 0:
         return class_id, list(zip(coords[0::2], coords[1::2]))
     raise ValueError(
@@ -294,6 +299,9 @@ def find_split_overlap(
         source-frame names (empty set when there is no overlap).
     """
     root = Path(root)
+    # Roboflow augmentation makes several files from one frame, so compare the
+    # underlying frame names; comparing file names would miss copies that
+    # have different augmentation hashes.
     frames = {
         split: {source_frame_name(p) for p in list_images(root / split / "images")}
         for split in splits
@@ -331,6 +339,8 @@ def bbox_area_stats(
     areas: Dict[str, List[float]] = {}
     for label_file in sorted(label_dir.glob("*.txt")):
         for class_id, points in load_yolo_label(label_file, len(class_names), skip_invalid):
+            # Use the axis-aligned extent so boxes and polygons are measured the
+            # same way; as a fraction of the image it is resolution-independent.
             width, height = _extent(points)
             areas.setdefault(class_names[class_id], []).append(width * height)
 
@@ -386,6 +396,8 @@ def extract_dataset(
     if not zip_path.is_file():
         raise FileNotFoundError(f"dataset zip not found: {zip_path}")
 
+    # Refuse to extract into a non-empty folder: mixing two dataset versions
+    # would silently corrupt the splits.
     if dest.exists() and any(dest.iterdir()):
         if not overwrite:
             raise FileExistsError(
@@ -397,6 +409,8 @@ def extract_dataset(
     with zipfile.ZipFile(zip_path) as archive:
         archive.extractall(dest)
 
+    # Check the layout after extracting: a zip with an extra top-level folder
+    # is the usual cause, and failing here is clearer than a training error.
     missing = _missing_split_dirs(dest, splits)
     if missing:
         raise ValueError(
@@ -431,6 +445,8 @@ def write_data_yaml(
     if missing:
         raise ValueError(f"cannot write data yaml; missing in {root}: {', '.join(missing)}")
 
+    # Absolute paths remove any ambiguity about what a relative path in the
+    # yaml would be resolved against.
     out_path = Path(out_path) if out_path is not None else root / "data_fixed.yaml"
     # json.dumps gives valid YAML scalars/flow sequences and safely quotes
     # paths that contain spaces or colons.

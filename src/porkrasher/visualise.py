@@ -50,10 +50,12 @@ def draw_annotations(
     if not image_path.is_file():
         raise FileNotFoundError(f"image not found: {image_path}")
 
+    # Labels are normalised to [0, 1], so pixel size is needed to place them.
     with Image.open(image_path) as img:
         width, height = img.size
         ax.imshow(img)
 
+    # A missing label file means a background image (no objects), not an error.
     annotations = (
         load_yolo_label(label_path, len(class_names)) if label_path.is_file() else []
     )
@@ -106,11 +108,13 @@ def plot_samples(
     if not images:
         raise ValueError(f"no images found in {image_dir}")
 
+    # A local Random(seed) keeps the sample reproducible without touching the
+    # global random state; min() avoids an error if fewer than n images exist.
     chosen = random.Random(seed).sample(images, min(n, len(images)))
     cols = 2 if len(chosen) > 1 else 1
     rows = (len(chosen) + cols - 1) // cols
     fig, axes = plt.subplots(rows, cols, figsize=(6 * cols, 5 * rows), squeeze=False)
-    for ax in axes.flat[len(chosen):]:
+    for ax in axes.flat[len(chosen):]:  # hide unused cells in the grid
         ax.axis("off")
     for ax, image_path in zip(axes.flat, chosen):
         label_path = Path(label_dir) / (image_path.stem + ".txt")

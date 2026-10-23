@@ -20,6 +20,7 @@ src/porkrasher/
     visualise.py   draw ground-truth boxes for sanity checks
 tests/             pytest tests (no GPU, no dataset and no ultralytics needed)
 notebooks/         colab_workflow.ipynb: thin notebook that calls the package
+                   baseline_experiments.ipynb: the original Colab notebook the reported results came from
 results/           metrics_summary.csv, per_class_ap50.csv
 docs/              generated HTML documentation
 ```
@@ -27,8 +28,8 @@ docs/              generated HTML documentation
 ## Setup
 
 ```bash
-git clone <https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858/tree/main>
-cd pork-rasher-defect-detection
+git clone https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858.git
+cd MMA3001-Project-Nicholas-Caciolo-34988858
 pip install -e .            # installs ultralytics==8.4.175 and the other dependencies
 pip install pytest pdoc     # development tools
 ```
@@ -69,6 +70,8 @@ python -m porkrasher.evaluate --weights runs/yolov8n_100ep/weights/best.pt --dat
 
 ## Results
 
+The numbers below come from the original experiment notebook (`notebooks/baseline_experiments.ipynb`), run before the code was reorganised into the `porkrasher` package. Re-running the same configuration through the package (`notebooks/colab_workflow.ipynb`) is a useful check but should not be expected to match exactly: one rerun of YOLOv8n stopped at epoch 46 and scored validation mAP50 0.539 (mAP50-95 0.327), against 0.617 (0.377) in the reported run. The cause was not investigated (library version and run-to-run variation are both possible), and it shows how much a single run can vary on a 120-image validation set.
+
 | Model | Split | mAP50 | mAP50-95 | Precision | Recall |
 |---|---|---|---|---|---|
 | YOLOv8n (50 epochs) | val | 0.606 | 0.360 | 0.781 | 0.559 |
@@ -95,16 +98,15 @@ Per-class AP50 is in `results/per_class_ap50.csv`.
 ## Tests and documentation
 
 ```bash
-pytest -v                          # run the tests
-pytest -v > results/test_report.txt   # save a test report
-pdoc -o docs src/porkrasher        # regenerate the HTML documentation
+python -m pytest -v | tee results/test_report.txt   # run the tests and save the test report
+pdoc -o docs porkrasher                            # regenerate the HTML documentation (after pip install -e .)
 ```
 
 Open `docs/index.html` in a browser.
 
 ## AI use
 
-Claude (Anthropic) was used to help plan the project, write and debug code, draft the report and structure this repository. All results were produced by running the code on the dataset; see the AI-use reflection in the report.
+Claude (Anthropic) wrote the first version of the Colab training notebook, and later the `porkrasher` package, its tests and this README, and helped debug and draft the report. All training and evaluation was run by the author in Google Colab, and the reported numbers are from those runs. See the AI-use reflection in the report for what was checked and what went wrong.
 
 ## License
 
