@@ -6,7 +6,7 @@ A YOLOv8 object detector, fine-tuned from COCO-pretrained weights, that finds pa
 
 ## What it does
 
-- **Input:** a photo of a pork rasher tray (640 x 640 after resizing).
+- **Input:** a photo of a pork rasher tray (resized to 640 x 640 for the model).
 - **Output:** bounding boxes with a class and a confidence score for five classes: `loose-meat`, `packaging-error`, `twisted-meat`, `unsealed`, `wrinkle`.
 - **Labels are plain bounding boxes** (no polygons), so this is detection, not segmentation.
 
@@ -27,6 +27,8 @@ docs/              generated HTML documentation
 
 ## Setup
 
+Requires Python 3.10 or newer. A GPU is strongly recommended for training (a Tesla T4 on Google Colab was used; Colab ran Python 3.13 and torch 2.11 with Ultralytics 8.4.175). Evaluation and the tests also run on CPU. Ultralytics is licensed AGPL-3.0; it is installed as a dependency and is not redistributed here.
+
 ```bash
 git clone https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858.git
 cd MMA3001-Project-Nicholas-Caciolo-34988858
@@ -38,7 +40,7 @@ pip install pytest pdoc     # development tools
 
 The dataset is **not** included in this repository. It is the Roboflow Universe project
 [pork-rasher-error-packaging, version 4](https://universe.roboflow.com/hello-2aqe0/pork-rasher-error-packaging/dataset/4)
-(workspace `hello-2aqe0`), licensed **CC BY 4.0**. Download it in YOLOv8 format and unzip it so that the root contains `train/`, `valid/` and `test/`, each with `images/` and `labels/`.
+(workspace `hello-2aqe0`), licensed **CC BY 4.0**. Download the YOLO-format export (the zip used here was named `...v4i.yolo26.zip`) and unzip it so that the root contains `train/`, `valid/` and `test/`, each with `images/` and `labels/`.
 
 | Split | Images | Instances |
 |---|---|---|
@@ -48,7 +50,13 @@ The dataset is **not** included in this repository. It is the Roboflow Universe 
 
 Class instances (train / valid / test): unsealed 1,055 / 81 / 49; packaging-error 1,712 / 34 / 23; twisted-meat 72 / 3 / 4; loose-meat 66 / 3 / 3; wrinkle 18 / 0 / 0.
 
+## Quick check without the dataset
+
+The tests build tiny fake datasets themselves, so `python -m pytest` works straight after `pip install -e .` with no data and no GPU (54 tests; the saved output is in `results/test_report.txt`). The reported results are in `results/` and `notebooks/baseline_experiments.ipynb`.
+
 ## Reproducing the results
+
+The commands below need the dataset. Replace `path/to/dataset` with the folder you unzipped it into.
 
 ```bash
 # 1. inspect the data (class counts, split overlap, box sizes), then write the Ultralytics config
@@ -56,15 +64,17 @@ python -m porkrasher.data --root path/to/dataset
 python -c "from porkrasher.data import write_data_yaml; print(write_data_yaml('path/to/dataset'))"
 
 # 2. train (selected model: YOLOv8n; comparison model: YOLOv8s)
-python -m porkrasher.train --data path/to/dataset/data.yaml --weights yolov8n.pt --epochs 100 --name yolov8n_100ep
-python -m porkrasher.train --data path/to/dataset/data.yaml --weights yolov8s.pt --epochs 100 --name yolov8s_100ep
+python -m porkrasher.train --data path/to/dataset/data_fixed.yaml --weights yolov8n.pt --epochs 100 --name yolov8n_100ep
+python -m porkrasher.train --data path/to/dataset/data_fixed.yaml --weights yolov8s.pt --epochs 100 --name yolov8s_100ep
 
 # 3. validate on the validation split (use this for model selection)
-python -m porkrasher.evaluate --weights runs/yolov8n_100ep/weights/best.pt --data path/to/dataset/data.yaml --split val --out results/yolov8n_val.json
+python -m porkrasher.evaluate --weights runs/yolov8n_100ep/weights/best.pt --data path/to/dataset/data_fixed.yaml --split val --out results/yolov8n_val.json
 
 # 4. test split: run ONCE, on the final chosen model only
-python -m porkrasher.evaluate --weights runs/yolov8n_100ep/weights/best.pt --data path/to/dataset/data.yaml --split test --out results/yolov8n_test.json
+python -m porkrasher.evaluate --weights runs/yolov8n_100ep/weights/best.pt --data path/to/dataset/data_fixed.yaml --split test --out results/yolov8n_test.json
 ```
+
+The training command prints `Run folder (use this path)`. If a run name was used before, Ultralytics adds a number to the folder name (for example `yolov8n_100ep2`), so use the printed folder in the `--weights` paths of steps 3 and 4.
 
 `notebooks/colab_workflow.ipynb` runs the same steps in Colab. Set `REPO_URL` and `ZIP_PATH` in its first cells.
 
