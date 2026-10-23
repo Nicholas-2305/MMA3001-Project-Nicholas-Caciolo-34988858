@@ -30,10 +30,10 @@ docs/              generated HTML documentation
 Requires Python 3.10 or newer. A GPU is strongly recommended for training (a Tesla T4 on Google Colab was used; Colab ran Python 3.13 and torch 2.11 with Ultralytics 8.4.175). Evaluation and the tests also run on CPU. Ultralytics is licensed AGPL-3.0; it is installed as a dependency and is not redistributed here.
 
 ```bash
-git clone https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858.git
-cd MMA3001-Project-Nicholas-Caciolo-34988858
-pip install -e .            # installs ultralytics==8.4.175 and the other dependencies
-pip install pytest pdoc     # development tools
+!git clone https://github.com/Nicholas-2305/MMA3001-Project-Nicholas-Caciolo-34988858.git
+%cd MMA3001-Project-Nicholas-Caciolo-34988858
+!pip install -e .            # installs ultralytics==8.4.175 and the other dependencies
+!pip install pytest pdoc     # development tools
 ```
 
 ## Data
